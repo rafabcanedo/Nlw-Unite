@@ -1,0 +1,20 @@
+POST http://localhost:3333/events
+Content-Type: application/json
+
+{
+    "title": "New Event",
+    "details": null,
+    "maximumMembers": 1
+}
+
+###
+POST http://localhost:3333/events/d2ee63f8-e48d-438a-9e66-e92dca8776c8/members
+Content-Type: application/json
+
+{
+  "name": "Rafael Canedo",
+  "email": "rafa@gmail.com"
+}
+
+###
+GET http://localhost:3333/events/d2ee63f8-e48d-438a-9e66-e92dca8776c8
