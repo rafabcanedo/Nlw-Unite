@@ -18,3 +18,12 @@ Content-Type: application/json
 
 ###
 GET http://localhost:3333/events/d2ee63f8-e48d-438a-9e66-e92dca8776c8
+
+###
+GET http://localhost:3333/members/3/badge
+
+###
+GET http://localhost:3333/members/3/check-in
+
+###
+GET http://localhost:3333/events/d2ee63f8-e48d-438a-9e66-e92dca8776c8/members?query=rafael
