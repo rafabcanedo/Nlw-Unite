@@ -1,13 +1,44 @@
-import { View, Image, StatusBar } from "react-native";
+import { useState } from "react";
+import { View, Image, StatusBar, Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, Redirect } from "expo-router";
 
 import { colors } from "@/styles/colors";
 
 import { Input } from "@/components/input";
 import { Button } from "@/components/button";
+import { api } from "@/server/api";
+import { useBadgeStore } from "@/store/badge-store";
 
 export default function Home(){
+
+ const [ code, setCode ] = useState("")
+ const [isLoading, setIsLoading] = useState(false)
+
+ const badgeStore = useBadgeStore()
+
+ async function handleAccessCredential() {
+  try {
+    if (!code.trim()) {
+      return Alert.alert("Ingresso", "Informe o código do ingresso!")
+    }
+
+    setIsLoading(true)
+
+    const { data } = await api.get(`/members/${code}/badge`)
+    badgeStore.save(data.badge)
+  } catch (error) {
+    console.log(error)
+    setIsLoading(false)
+
+    Alert.alert("Ingresso", "Ingresso não encontrado!")
+  }
+}
+
+if (badgeStore.data?.checkInURL) {
+  return <Redirect href="/ticket" />
+}
+
  return (
  <View className="flex-1 bg-green-500 items-center justify-center p-8">
 
@@ -28,10 +59,14 @@ export default function Home(){
      />
      <Input.Field 
       placeholder="Código do ingresso"
+      onChangeText={setCode}
      />
     </Input>
-
-    <Button title="Acessar Credencial" />
+    
+    <Button
+     title="Acessar credencial"
+     onPress={handleAccessCredential}
+    />
 
     <Link 
      href="/register"
