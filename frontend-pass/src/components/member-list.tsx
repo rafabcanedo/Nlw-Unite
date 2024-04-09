@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreHorizontal, Search } from "lucide-react";
 import { IconButton } from "./icon-button";
 
@@ -14,31 +14,70 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
+interface Member {
+ id: string
+ name: string
+ email: string
+ createdAt: string
+ checkedInAt: string | null // ele pode ser null (no backend)
+}
+
 export function MemberList() {
 
  const [ search, setSearch ] = useState("")
- const [page, setPage ] = useState(0)
+ const [page, setPage ] = useState(1)
 
- const totalPages = Math.ceil(members.length / 10)
+ const [ total, setTotal ] = useState(0)
+ const [ members, setMembers ] = useState<Member[]>([])
+
+ const totalPages = Math.ceil(total / 10)
+
+ useEffect(() => {
+  const url = new URL('http://localhost:3333/events/04b1b1ec-65e2-4d8e-84b8-5212b3239114/members')
+
+  url.searchParams.set('pageIndex', String(page - 1))
+
+  if (search.length > 0) {
+  url.searchParams.set('query', search)
+  }
+  
+  fetch(url)
+  .then(response => response.json())
+  .then(data => {
+    setMembers(data.members)
+    setTotal(data.total)
+  })
+ }, [page, search])
+
+ function setCurrentPage(page: number) {
+  const url = new URL(window.location.toString());
+
+  url.searchParams.set("page", String(page));
+
+  window.history.pushState({}, "", url);
+
+  setPage(page);
+}
 
  function onSearchInputChanged(event: ChangeEvent<HTMLInputElement>) {
   setSearch(event.target.value)
+  setCurrentPage(1)
  }
 
  function goToFirstPage() {
-  setPage(1)
+  setCurrentPage(1)
  }
 
  function goToLastPage() {
-  setPage(totalPages)
+  setCurrentPage(totalPages)
  }
 
  function goToPreviousPage() {
-  setPage(page - 1)
+  setCurrentPage(page - 1)
  }
 
  function goToNextPage() {
-  setPage(page + 1)
+  setCurrentPage(page + 1)
  }
 
  return (
@@ -78,36 +117,48 @@ export function MemberList() {
             </tr>
           </thead>
           <tbody>
-            {members.slice((page - 1) * 10, page * 10).map((member) => {
-              return (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <input type="checkbox" className="size-4 bg-black/20 rounded border border-white/10" />
-                  </TableCell>
-                  <TableCell>12383</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <span className="font-semibold text-white">
-                        Diego Schell Fernandes
-                      </span>
-                      <span>diego@rocketseat.com.br</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{dayjs(member.createdAt).toNow()}</TableCell>
-                  <TableCell>{dayjs(member.checkedIntAt).toNow()}</TableCell>
-                  <TableCell>
-                    <button className="bg-black/20 border border-white/10 rounded-md p-1.5">
-                      <MoreHorizontal className="size-4" />
-                    </button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+          {members.map((member) => {
+            return (
+              <TableRow key={member.id}>
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    className="size-4 bg-black/20 rounded border border-white/10"
+                  />
+                </TableCell>
+                <TableCell>{member.id}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-semibold text-white">
+                      {member.name}
+                    </span>
+                    <span>{member.email}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{dayjs().to(member.createdAt)}</TableCell>
+                <TableCell>
+                  {member.checkedInAt === null ? (
+                    <span className="text-zinc-400">Não fez check-in</span>
+                  ) : (
+                    dayjs().to(member.checkedInAt)
+                  )}
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    transparent
+                    className="bg-black/20 border border-white/10 rounded-md p-1.5"
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            );
+          })}
           </tbody>
           <tfoot>
             <tr>
               <TableCell>
-                Mostrando 10 de {members.length} itens
+                Mostrando {members.length} de {total} itens
               </TableCell>
               <td className="py-3 px-4 text-sm text-zinc-300 text-right" colSpan={3}>
                 <div className="inline-flex items-center gap-8">
